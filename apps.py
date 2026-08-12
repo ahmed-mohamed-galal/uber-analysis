@@ -7,9 +7,8 @@ import seaborn as sns
 
 @st.cache_data
 def load_data():
-    # Tell pandas to treat this specific column as dates right from the start
     df = pd.read_csv(
-        'C:/Users/ahmed/Downloads/ncr_ride_bookingccccc.csv', 
+        'ncr_ride_bookingccccc.csv',
         parse_dates=['Ride Start Datetime']
     )
     return df
