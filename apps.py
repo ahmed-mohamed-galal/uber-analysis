@@ -11,11 +11,41 @@ PALETTE = ["#2563eb", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4"]
 st.markdown("""
 <style>
 .block-container {padding-top: 1.5rem;}
+
+/* ---------- KPI cards ---------- */
 div[data-testid="stMetric"] {
-    background: #ffffff; border: 1px solid #e5e7eb; border-left: 5px solid #2563eb;
-    padding: 14px 18px; border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,.06);
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-left: 6px solid #2563eb;
+    padding: 16px 20px;
+    border-radius: 14px;
+    box-shadow: 0 2px 8px rgba(0,0,0,.08);
 }
-div[data-testid="stMetric"] label {color:#6b7280; font-weight:600;}
+/* label (Total Rides, Revenue...) */
+div[data-testid="stMetricLabel"],
+div[data-testid="stMetricLabel"] * {
+    color: #475569 !important;
+    font-weight: 600 !important;
+    font-size: 0.95rem !important;
+}
+/* big value (150,000 ...) */
+div[data-testid="stMetricValue"],
+div[data-testid="stMetricValue"] * {
+    color: #0f172a !important;
+    font-weight: 800 !important;
+}
+/* delta */
+div[data-testid="stMetricDelta"] {
+    font-weight: 600 !important;
+}
+
+/* a different accent color for each card */
+div[data-testid="column"]:nth-of-type(1) div[data-testid="stMetric"] {border-left-color: #2563eb;}
+div[data-testid="column"]:nth-of-type(2) div[data-testid="stMetric"] {border-left-color: #10b981;}
+div[data-testid="column"]:nth-of-type(3) div[data-testid="stMetric"] {border-left-color: #f59e0b;}
+div[data-testid="column"]:nth-of-type(4) div[data-testid="stMetric"] {border-left-color: #8b5cf6;}
+div[data-testid="column"]:nth-of-type(5) div[data-testid="stMetric"] {border-left-color: #ef4444;}
+
 .insight {background:#f0f6ff; border-radius:10px; padding:12px 16px; margin-bottom:8px; color:#1e3a8a;}
 </style>
 """, unsafe_allow_html=True)
