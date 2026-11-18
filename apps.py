@@ -5,7 +5,7 @@ import plotly.graph_objects as go
 
 st.set_page_config(page_title="Ride Analytics | Executive View", page_icon="🚖", layout="wide")
 
-DATA_FILE = "ncr_ride_bookings.csv"  # fixed typo from 'ncr_ride_bookingccccc.csv'
+DATA_FILE = "ncr_ride_bookingccccc.csv"  # matches the file name in your repo
 PALETTE = ["#2563eb", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4"]
 
 st.markdown("""
