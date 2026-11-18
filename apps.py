@@ -24,7 +24,7 @@ div[data-testid="stMetric"] {
 /* label */
 div[data-testid="stMetricLabel"],
 div[data-testid="stMetricLabel"] * {
-    color: #475569 !important;
+    color: #000000 !important;
     font-weight: 600 !important;
     font-size: 0.95rem !important;
 }
@@ -58,7 +58,7 @@ div[data-testid="stColumn"]:nth-of-type(2) div[data-testid="stMetric"] {
 }
 div[data-testid="column"]:nth-of-type(2) div[data-testid="stMetricLabel"] *,
 div[data-testid="stColumn"]:nth-of-type(2) div[data-testid="stMetricLabel"] * {
-    color: #047857 !important;
+    color: #000000 !important;
     white-space: normal !important;
     overflow: visible !important;
     text-overflow: clip !important;
