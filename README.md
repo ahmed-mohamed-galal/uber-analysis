@@ -85,14 +85,6 @@ The notebook walks through:
 4. **Visualization** — charts highlighting booking behavior and cancellations
 5. **Insights** — key takeaways from the data
 
-## 📸 Screenshots
-
-_Add screenshots of the dashboard here._
-
-```markdown
-![Dashboard](images/dashboard.png)
-```
-
 ## 🤝 Contributing
 
 Contributions, issues, and feature requests are welcome. Feel free to open an issue or submit a pull request.
