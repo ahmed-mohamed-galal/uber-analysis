@@ -2,6 +2,10 @@
 
 Exploratory analysis and an interactive dashboard of Uber ride bookings in the National Capital Region (NCR). The project covers data cleaning, exploration, and visualization in a Jupyter notebook, plus a Streamlit app for exploring the data interactively.
 
+## 🌐 Live Demo
+
+👉 **[Open the Streamlit app](https://uber-analysis-d5tyuynaanyvpeyyqf4xyg.streamlit.app/)**
+
 ## 📁 Repository Structure
 
 ```
@@ -63,7 +67,7 @@ jupyter notebook uber.ipynb
 streamlit run apps.py
 ```
 
-The app will open in your browser at `http://localhost:8501`.
+The app will open in your browser at `http://localhost:8501`, or you can use the [hosted version](https://uber-analysis-d5tyuynaanyvpeyyqf4xyg.streamlit.app/).
 
 ## 📊 Dataset
 
