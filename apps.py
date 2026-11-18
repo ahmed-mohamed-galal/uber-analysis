@@ -1,85 +1,191 @@
 import streamlit as st
-st.set_page_config(page_title="Ride Analytics Dashboard", layout="wide")
-import streamlit as st
 import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
+import plotly.express as px
+import plotly.graph_objects as go
+
+st.set_page_config(page_title="Ride Analytics | Executive View", page_icon="🚖", layout="wide")
+
+DATA_FILE = "ncr_ride_bookings.csv"  # fixed typo from 'ncr_ride_bookingccccc.csv'
+PALETTE = ["#2563eb", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4"]
+
+st.markdown("""
+<style>
+.block-container {padding-top: 1.5rem;}
+div[data-testid="stMetric"] {
+    background: #ffffff; border: 1px solid #e5e7eb; border-left: 5px solid #2563eb;
+    padding: 14px 18px; border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,.06);
+}
+div[data-testid="stMetric"] label {color:#6b7280; font-weight:600;}
+.insight {background:#f0f6ff; border-radius:10px; padding:12px 16px; margin-bottom:8px; color:#1e3a8a;}
+</style>
+""", unsafe_allow_html=True)
+
 
 @st.cache_data
 def load_data():
-    df = pd.read_csv(
-        'ncr_ride_bookingccccc.csv',
-        parse_dates=['Ride Start Datetime']
-    )
+    df = pd.read_csv(DATA_FILE)
+    if "Ride Start Datetime" in df.columns:
+        df["Ride Start Datetime"] = pd.to_datetime(df["Ride Start Datetime"], errors="coerce")
+    else:  # original NCR dataset has separate Date + Time columns
+        df["Ride Start Datetime"] = pd.to_datetime(df["Date"].astype(str) + " " + df["Time"].astype(str), errors="coerce")
+    df = df.dropna(subset=["Ride Start Datetime"])
+    df["Hour"] = df["Ride Start Datetime"].dt.hour
+    df["Weekday"] = df["Ride Start Datetime"].dt.day_name()
     return df
+
 
 df = load_data()
 
-st.title("🚖 NCR Ride Bookings: Interactive Visual Analysis")
-st.markdown("Explore trends, pricing, and cancellation patterns through interactive filtering.")
+# ---------------- Sidebar ----------------
+st.sidebar.header("🎛️ Filters")
+dmin, dmax = df["Ride Start Datetime"].min().date(), df["Ride Start Datetime"].max().date()
+date_range = st.sidebar.date_input("Date range", (dmin, dmax), min_value=dmin, max_value=dmax)
+vehicles = st.sidebar.multiselect("Vehicle type", sorted(df["Vehicle Type"].dropna().unique()),
+                                  default=sorted(df["Vehicle Type"].dropna().unique()))
+statuses = st.sidebar.multiselect("Booking status", sorted(df["Booking Status"].dropna().unique()),
+                                  default=sorted(df["Booking Status"].dropna().unique()))
 
-# --- Sidebar Filters ---
-st.sidebar.header("Dashboard Filters")
-vehicle_types = st.sidebar.multiselect("Select Vehicle Type", options=df['Vehicle Type'].unique(), default=df['Vehicle Type'].unique())
-booking_status = st.sidebar.multiselect("Select Booking Status", options=df['Booking Status'].unique(), default=df['Booking Status'].unique())
+if len(date_range) != 2:
+    st.info("Select both a start and end date.")
+    st.stop()
 
-# Apply Filters
-mask = (df['Vehicle Type'].isin(vehicle_types)) & (df['Booking Status'].isin(booking_status))
-filtered_df = df[mask]
+start, end = pd.Timestamp(date_range[0]), pd.Timestamp(date_range[1]) + pd.Timedelta(days=1)
+base = df[df["Vehicle Type"].isin(vehicles) & df["Booking Status"].isin(statuses)]
+cur = base[(base["Ride Start Datetime"] >= start) & (base["Ride Start Datetime"] < end)]
+prev_start = start - (end - start)
+prev = base[(base["Ride Start Datetime"] >= prev_start) & (base["Ride Start Datetime"] < start)]
 
-# --- Key Metrics ---
-m1, m2, m3 = st.columns(3)
-m1.metric("Total Selected Rides", len(filtered_df))
-m2.metric("Avg. Booking Value", f"${filtered_df['Booking Value'].mean():.2f}")
-m3.metric("Avg. Distance", f"{filtered_df['Ride Distance'].mean():.2f} km")
+if cur.empty:
+    st.warning("No data for the selected filters.")
+    st.stop()
 
-# --- Visualizations ---
-st.subheader("📈 Ride Volume Over Time")
-daily_vol = filtered_df.resample('D', on='Ride Start Datetime').size()
-fig1, ax1 = plt.subplots(figsize=(12, 4))
-ax1.plot(daily_vol.index, daily_vol.values, color='#2c7fb8', linewidth=2)
-ax1.set_title("Daily Booking Counts")
-st.pyplot(fig1)
 
-col1, col2 = st.columns(2)
+# ---------------- KPI helpers ----------------
+def kpis(d):
+    completed = d[d["Booking Status"] == "Completed"]
+    return {
+        "rides": len(d),
+        "revenue": completed["Booking Value"].sum(),
+        "avg_value": completed["Booking Value"].mean() if len(completed) else 0,
+        "completion": len(completed) / len(d) * 100 if len(d) else 0,
+        "cancel": d["Booking Status"].str.contains("Cancel", na=False).mean() * 100 if len(d) else 0,
+    }
 
-with col1:
-    st.subheader("📊 Booking Status Distribution")
-    fig2, ax2 = plt.subplots()
-    status_data = filtered_df['Booking Status'].value_counts()
-    sns.barplot(x=status_data.values, y=status_data.index, hue=status_data.index, palette='viridis', ax=ax2, legend=False)
-    st.pyplot(fig2)
 
-with col2:
-    st.subheader("💰 Value vs Distance Correlation")
-    fig3, ax3 = plt.subplots()
-    # Sample for performance if dataset is huge
-    sample_df = filtered_df.sample(min(len(filtered_df), 1000))
-    sns.scatterplot(data=sample_df, x='Ride Distance', y='Booking Value', hue='Vehicle Type', alpha=0.6, ax=ax3)
-    st.pyplot(fig3)
+k, kp = kpis(cur), kpis(prev)
 
-st.subheader("🚫 Cancellation Deep Dive")
-c1, c2 = st.columns(2)
-with c1:
-    st.write("**Customer Cancellation Reasons**")
-    cust_reasons = filtered_df[filtered_df['Reason for cancelling by Customer'] != 'Not Applicable']
-    if not cust_reasons.empty:
-        fig4, ax4 = plt.subplots()
-        sns.countplot(data=cust_reasons, y='Reason for cancelling by Customer', order=cust_reasons['Reason for cancelling by Customer'].value_counts().index[:5], palette='magma', ax=ax4)
-        st.pyplot(fig4)
-    else:
-        st.info("No customer cancellations in filtered data.")
 
-with c2:
-    st.write("**Driver Cancellation Reasons**")
-    driv_reasons = filtered_df[filtered_df['Driver Cancellation Reason'] != 'Not Applicable']
-    if not driv_reasons.empty:
-        fig5, ax5 = plt.subplots()
-        sns.countplot(data=driv_reasons, y='Driver Cancellation Reason', order=driv_reasons['Driver Cancellation Reason'].value_counts().index[:5], palette='flare', ax=ax5)
-        st.pyplot(fig5)
-    else:
-        st.info("No driver cancellations in filtered data.")
+def delta(key, pct=False):
+    if prev.empty or not kp[key]:
+        return None
+    return f"{k[key] - kp[key]:+.1f} pts" if pct else f"{(k[key] / kp[key] - 1) * 100:+.1f}%"
 
-st.markdown("--- ")
-st.write("**Raw Data Preview (Filtered)**")
-st.dataframe(filtered_df.head(50))
+
+# ---------------- Header ----------------
+st.title("🚖 NCR Ride Analytics — Executive Summary")
+st.caption(f"{date_range[0]:%d %b %Y} → {date_range[1]:%d %b %Y}  •  changes vs. previous period of equal length")
+
+c1, c2, c3, c4, c5 = st.columns(5)
+c1.metric("Total Rides", f"{k['rides']:,}", delta("rides"))
+c2.metric("Revenue (Completed)", f"${k['revenue']/1e6:,.2f}M" if k["revenue"] >= 1e6 else f"${k['revenue']:,.0f}", delta("revenue"))
+c3.metric("Avg. Booking Value", f"${k['avg_value']:,.2f}", delta("avg_value"))
+c4.metric("Completion Rate", f"{k['completion']:.1f}%", delta("completion", pct=True))
+c5.metric("Cancellation Rate", f"{k['cancel']:.1f}%", delta("cancel", pct=True), delta_color="inverse")
+
+# ---------------- Auto insights ----------------
+completed = cur[cur["Booking Status"] == "Completed"]
+insights = []
+if len(completed):
+    top_v = completed.groupby("Vehicle Type")["Booking Value"].sum().idxmax()
+    insights.append(f"💡 **{top_v}** is the top revenue-generating vehicle type.")
+    peak = cur.groupby("Hour").size().idxmax()
+    insights.append(f"⏰ Demand peaks at **{peak}:00**; plan driver supply around this hour.")
+canc = cur[cur["Booking Status"].str.contains("Cancel", na=False)]
+if len(canc):
+    insights.append(f"🚫 **{len(canc):,}** rides were cancelled — {k['cancel']:.1f}% of all bookings.")
+st.markdown("### 🔎 Key Takeaways")
+for i in insights:
+    st.markdown(f'<div class="insight">{i}</div>', unsafe_allow_html=True)
+
+tab1, tab2, tab3, tab4 = st.tabs(["📈 Performance", "🚗 Vehicles & Pricing", "🚫 Cancellations", "🗂️ Data"])
+
+# ---------------- Tab 1: Performance ----------------
+with tab1:
+    freq = st.radio("Granularity", ["Daily", "Weekly", "Monthly"], horizontal=True, index=1)
+    rule = {"Daily": "D", "Weekly": "W", "Monthly": "MS"}[freq]
+    ts = cur.resample(rule, on="Ride Start Datetime").agg(
+        rides=("Booking Status", "size"),
+        revenue=("Booking Value", lambda s: s[cur.loc[s.index, "Booking Status"] == "Completed"].sum()),
+    ).reset_index()
+
+    fig = go.Figure()
+    fig.add_bar(x=ts["Ride Start Datetime"], y=ts["rides"], name="Rides", marker_color="#bfdbfe")
+    fig.add_scatter(x=ts["Ride Start Datetime"], y=ts["revenue"], name="Revenue", yaxis="y2",
+                    line=dict(color="#2563eb", width=3))
+    fig.update_layout(title="Ride Volume & Revenue Trend", height=400, hovermode="x unified",
+                      yaxis=dict(title="Rides"), yaxis2=dict(title="Revenue ($)", overlaying="y", side="right"),
+                      legend=dict(orientation="h", y=1.12), template="plotly_white")
+    st.plotly_chart(fig, use_container_width=True)
+
+    order = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+    heat = cur.pivot_table(index="Weekday", columns="Hour", values="Booking Status", aggfunc="size").reindex(order)
+    fig_h = px.imshow(heat, aspect="auto", color_continuous_scale="Blues",
+                      labels=dict(x="Hour of day", y="", color="Rides"), title="When Is Demand Highest?")
+    fig_h.update_layout(height=380, template="plotly_white")
+    st.plotly_chart(fig_h, use_container_width=True)
+
+# ---------------- Tab 2: Vehicles & Pricing ----------------
+with tab2:
+    a, b = st.columns(2)
+    rev_v = completed.groupby("Vehicle Type")["Booking Value"].sum().sort_values().reset_index()
+    a.plotly_chart(px.bar(rev_v, x="Booking Value", y="Vehicle Type", orientation="h", text_auto=".2s",
+                          title="Revenue by Vehicle Type", color_discrete_sequence=[PALETTE[0]])
+                   .update_layout(template="plotly_white", height=400), use_container_width=True)
+
+    share = cur["Vehicle Type"].value_counts().reset_index()
+    share.columns = ["Vehicle Type", "Rides"]
+    b.plotly_chart(px.pie(share, names="Vehicle Type", values="Rides", hole=.55, title="Ride Share by Vehicle",
+                          color_discrete_sequence=PALETTE).update_layout(height=400), use_container_width=True)
+
+    samp = completed.sample(min(len(completed), 2000), random_state=1) if len(completed) else completed
+    st.plotly_chart(px.scatter(samp, x="Ride Distance", y="Booking Value", color="Vehicle Type", opacity=.6,
+                               trendline="ols" if len(samp) > 10 else None,
+                               title="Price vs. Distance (sampled)", color_discrete_sequence=PALETTE)
+                    .update_layout(template="plotly_white", height=420), use_container_width=True)
+
+# ---------------- Tab 3: Cancellations ----------------
+with tab3:
+    a, b = st.columns(2)
+    st_cnt = cur["Booking Status"].value_counts().reset_index()
+    st_cnt.columns = ["Status", "Rides"]
+    a.plotly_chart(px.bar(st_cnt, x="Rides", y="Status", orientation="h", color="Status", text_auto=True,
+                          title="Booking Outcomes", color_discrete_sequence=PALETTE)
+                   .update_layout(showlegend=False, template="plotly_white", height=380), use_container_width=True)
+
+    rate = cur.groupby("Vehicle Type")["Booking Status"].apply(lambda s: s.str.contains("Cancel", na=False).mean() * 100).reset_index()
+    rate.columns = ["Vehicle Type", "Cancellation %"]
+    b.plotly_chart(px.bar(rate.sort_values("Cancellation %"), x="Cancellation %", y="Vehicle Type", orientation="h",
+                          text_auto=".1f", title="Cancellation Rate by Vehicle", color_discrete_sequence=[PALETTE[3]])
+                   .update_layout(template="plotly_white", height=380), use_container_width=True)
+
+    def reasons(col, title, color, container):
+        if col not in cur.columns:
+            return
+        r = cur[cur[col].notna() & ~cur[col].isin(["Not Applicable", "null", ""])][col].value_counts().head(5)
+        if r.empty:
+            container.info("No data for the selected filters.")
+            return
+        r = r.sort_values().reset_index()
+        r.columns = ["Reason", "Count"]
+        container.plotly_chart(px.bar(r, x="Count", y="Reason", orientation="h", text_auto=True, title=title,
+                                      color_discrete_sequence=[color])
+                               .update_layout(template="plotly_white", height=380), use_container_width=True)
+
+    c, d = st.columns(2)
+    reasons("Reason for cancelling by Customer", "Top Customer Cancellation Reasons", PALETTE[2], c)
+    reasons("Driver Cancellation Reason", "Top Driver Cancellation Reasons", PALETTE[4], d)
+
+# ---------------- Tab 4: Data ----------------
+with tab4:
+    st.dataframe(cur.drop(columns=["Hour", "Weekday"]).head(200), use_container_width=True)
+    st.download_button("⬇️ Download filtered data (CSV)", cur.to_csv(index=False).encode(), "filtered_rides.csv")
