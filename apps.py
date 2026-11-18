@@ -21,14 +21,14 @@ div[data-testid="stMetric"] {
     border-radius: 14px;
     box-shadow: 0 2px 8px rgba(0,0,0,.08);
 }
-/* label (Total Rides, Revenue...) */
+/* label */
 div[data-testid="stMetricLabel"],
 div[data-testid="stMetricLabel"] * {
     color: #475569 !important;
     font-weight: 600 !important;
     font-size: 0.95rem !important;
 }
-/* big value (150,000 ...) */
+/* big value */
 div[data-testid="stMetricValue"],
 div[data-testid="stMetricValue"] * {
     color: #0f172a !important;
@@ -39,12 +39,39 @@ div[data-testid="stMetricDelta"] {
     font-weight: 600 !important;
 }
 
-/* a different accent color for each card */
-div[data-testid="column"]:nth-of-type(1) div[data-testid="stMetric"] {border-left-color: #2563eb;}
-div[data-testid="column"]:nth-of-type(2) div[data-testid="stMetric"] {border-left-color: #10b981;}
-div[data-testid="column"]:nth-of-type(3) div[data-testid="stMetric"] {border-left-color: #f59e0b;}
-div[data-testid="column"]:nth-of-type(4) div[data-testid="stMetric"] {border-left-color: #8b5cf6;}
-div[data-testid="column"]:nth-of-type(5) div[data-testid="stMetric"] {border-left-color: #ef4444;}
+/* a different accent color for each card (supports old + new Streamlit) */
+div[data-testid="column"]:nth-of-type(1) div[data-testid="stMetric"],
+div[data-testid="stColumn"]:nth-of-type(1) div[data-testid="stMetric"] {border-left-color: #2563eb;}
+div[data-testid="column"]:nth-of-type(2) div[data-testid="stMetric"],
+div[data-testid="stColumn"]:nth-of-type(2) div[data-testid="stMetric"] {border-left-color: #10b981;}
+div[data-testid="column"]:nth-of-type(3) div[data-testid="stMetric"],
+div[data-testid="stColumn"]:nth-of-type(3) div[data-testid="stMetric"] {border-left-color: #f59e0b;}
+div[data-testid="column"]:nth-of-type(4) div[data-testid="stMetric"],
+div[data-testid="stColumn"]:nth-of-type(4) div[data-testid="stMetric"] {border-left-color: #8b5cf6;}
+div[data-testid="column"]:nth-of-type(5) div[data-testid="stMetric"],
+div[data-testid="stColumn"]:nth-of-type(5) div[data-testid="stMetric"] {border-left-color: #ef4444;}
+
+/* ---------- Revenue card (2nd card) ---------- */
+div[data-testid="column"]:nth-of-type(2) div[data-testid="stMetric"],
+div[data-testid="stColumn"]:nth-of-type(2) div[data-testid="stMetric"] {
+    background: #ecfdf5;
+}
+div[data-testid="column"]:nth-of-type(2) div[data-testid="stMetricLabel"] *,
+div[data-testid="stColumn"]:nth-of-type(2) div[data-testid="stMetricLabel"] * {
+    color: #047857 !important;
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    font-weight: 700 !important;
+}
+div[data-testid="column"]:nth-of-type(2) div[data-testid="stMetricValue"] *,
+div[data-testid="stColumn"]:nth-of-type(2) div[data-testid="stMetricValue"] * {
+    color: #064e3b !important;
+    font-size: 1.7rem !important;
+    white-space: nowrap !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+}
 
 .insight {background:#f0f6ff; border-radius:10px; padding:12px 16px; margin-bottom:8px; color:#1e3a8a;}
 </style>
