@@ -22,17 +22,29 @@ div[data-testid="stMetric"] {
     box-shadow: 0 2px 8px rgba(0,0,0,.08);
 }
 /* label */
-div[data-testid="stMetricLabel"],
-div[data-testid="stMetricLabel"] * {
+[data-testid="stMetric"] label,
+[data-testid="stMetric"] label *,
+[data-testid="stMetricLabel"],
+[data-testid="stMetricLabel"] *,
+[data-testid="stMetric"] p {
     color: #000000 !important;
+    -webkit-text-fill-color: #000000 !important;
+    opacity: 1 !important;
     font-weight: 600 !important;
     font-size: 0.95rem !important;
+    white-space: normal !important;      /* don't cut the text with "..." */
+    overflow: visible !important;
+    text-overflow: clip !important;
 }
 /* big value */
-div[data-testid="stMetricValue"],
-div[data-testid="stMetricValue"] * {
+[data-testid="stMetricValue"],
+[data-testid="stMetricValue"] * {
     color: #0f172a !important;
     font-weight: 800 !important;
+    font-size: 1.7rem !important;
+    white-space: nowrap !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
 }
 /* delta */
 div[data-testid="stMetricDelta"] {
